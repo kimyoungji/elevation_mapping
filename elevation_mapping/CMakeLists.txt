@@ -16,10 +16,12 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   tf_conversions
   eigen_conversions
-  kindr
+#  kindr
   kindr_ros
 )
 
+find_package(kindr)
+#find_package(kindr_ros)
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED)
@@ -51,7 +53,7 @@ catkin_package(
     tf
     tf_conversions
     eigen_conversions
-    kindr
+#    kindr
     kindr_ros
   DEPENDS
     Boost
@@ -68,6 +70,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
+  ${kindr_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
