@@ -9,3 +9,7 @@ track_point_x: 0.0
 track_point_y: 0.0
 track_point_z: 0.0
 
+#// remap tfs
+#// odom -> map
+#// cassie/torso -> odom
+

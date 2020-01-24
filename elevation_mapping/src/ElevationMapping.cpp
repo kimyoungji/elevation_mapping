@@ -316,14 +316,14 @@ void ElevationMapping::pointCloudCallback(
     }
     robotPoseCovariance = Eigen::Map<const Eigen::MatrixXd>(poseMessage->pose.covariance.data(), 6, 6);
 
-    //  publish tfs
-    static tf::TransformBroadcaster br;
-    tf::Transform transform;
+//    //  publish tfs
+//    static tf::TransformBroadcaster br;
+//    tf::Transform transform;
 
-    Eigen::Affine3d eigen_affine_pose;
-    tf::poseMsgToEigen (poseMessage->pose.pose, eigen_affine_pose);
-    tf::transformEigenToTF(eigen_affine_pose,transform);
-    br.sendTransform(tf::StampedTransform(transform, lastPointCloudUpdateTime_, mapFrameId_, robotBaseFrameId_));
+//    Eigen::Affine3d eigen_affine_pose;
+//    tf::poseMsgToEigen (poseMessage->pose.pose, eigen_affine_pose);
+//    tf::transformEigenToTF(eigen_affine_pose,transform);
+//    br.sendTransform(tf::StampedTransform(transform, lastPointCloudUpdateTime_, mapFrameId_, robotBaseFrameId_));
   }
 
   // Process point cloud.

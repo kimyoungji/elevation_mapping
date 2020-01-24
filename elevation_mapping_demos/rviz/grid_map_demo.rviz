@@ -5,7 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded: ~
       Splitter Ratio: 0.611464977
-    Tree Height: 375
+    Tree Height: 254
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -43,7 +43,7 @@ Visualization Manager:
       Color: 200; 200; 200
       Color Layer: elevation
       Color Transformer: GridMapLayer
-      Enabled: false
+      Enabled: true
       Height Layer: elevation
       Height Transformer: GridMapLayer
       History Length: 1
@@ -57,7 +57,7 @@ Visualization Manager:
       Topic: /elevation_mapping/elevation_map
       Unreliable: false
       Use Rainbow: true
-      Value: false
+      Value: true
     - Class: rviz/Marker
       Enabled: false
       Marker Topic: /elevation_map_raw_visualization/map_region
@@ -81,9 +81,9 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 77.0222778
+      Max Intensity: 17.7309113
       Min Color: 0; 85; 127
-      Min Intensity: -77.7495346
+      Min Intensity: -0.115014762
       Name: elevation_cloud
       Position Transformer: XYZ
       Queue Size: 10
@@ -109,11 +109,71 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        camera_aligned_depth_to_color_frame:
+          Value: true
+        camera_color_frame:
+          Value: true
+        camera_color_optical_frame:
+          Value: true
+        camera_depth_frame:
+          Value: true
+        camera_depth_optical_frame:
+          Value: true
+        camera_link:
+          Value: true
+        cassie/back_camera:
+          Value: true
+        cassie/front_camera:
+          Value: true
+        cassie/left_hip:
+          Value: true
+        cassie/left_knee:
+          Value: true
+        cassie/left_pelvis_abduction:
+          Value: true
+        cassie/left_pelvis_rotation:
+          Value: true
+        cassie/left_shin:
+          Value: true
+        cassie/left_tarsus:
+          Value: true
+        cassie/left_thigh:
+          Value: true
+        cassie/left_toe:
+          Value: true
+        cassie/pelvis:
+          Value: true
+        cassie/right_hip:
+          Value: true
+        cassie/right_knee:
+          Value: true
+        cassie/right_pelvis_abduction:
+          Value: true
+        cassie/right_pelvis_rotation:
+          Value: true
+        cassie/right_shin:
+          Value: true
+        cassie/right_tarsus:
+          Value: true
+        cassie/right_thigh:
+          Value: true
+        cassie/right_toe:
+          Value: true
+        cassie/tilted_lidar:
+          Value: true
+        cassie/top_lidar:
+          Value: true
+        cassie/torso:
+          Value: true
+        cassie/vectorNav:
+          Value: true
         map:
           Value: true
-        robot:
+        odom:
           Value: true
-        sensor:
+        velodyne:
+          Value: true
+        velodyne_actual:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -122,9 +182,41 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          robot:
-            sensor:
-              {}
+          odom:
+            cassie/pelvis:
+              cassie/left_pelvis_abduction:
+                cassie/left_pelvis_rotation:
+                  cassie/left_hip:
+                    cassie/left_thigh:
+                      cassie/left_knee:
+                        cassie/left_shin:
+                          cassie/left_tarsus:
+                            cassie/left_toe:
+                              {}
+              cassie/right_pelvis_abduction:
+                cassie/right_pelvis_rotation:
+                  cassie/right_hip:
+                    cassie/right_thigh:
+                      cassie/right_knee:
+                        cassie/right_shin:
+                          cassie/right_tarsus:
+                            cassie/right_toe:
+                              {}
+              cassie/torso:
+                cassie/back_camera:
+                  {}
+                cassie/front_camera:
+                  {}
+                cassie/tilted_lidar:
+                  {}
+                cassie/top_lidar:
+                  {}
+              cassie/vectorNav:
+                camera_color_frame:
+                  camera_color_optical_frame:
+                    velodyne_actual:
+                      velodyne:
+                        {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -157,6 +249,51 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Class: rviz/Camera
+      Enabled: true
+      Image Rendering: background and overlay
+      Image Topic: /camera/color/image_raw
+      Name: Camera
+      Overlay Alpha: 0.5
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+      Visibility:
+        Axes: true
+        GridMap: true
+        Image: true
+        Map Region: true
+        PointCloud2: true
+        Surface Normals: true
+        TF: true
+        Value: true
+        elevation_cloud: true
+      Zoom Factor: 1
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /camera/aligned_depth_to_color/image_raw
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /camera/color/image_raw
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
@@ -182,7 +319,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 11.67768
+      Distance: 73.2107239
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -197,18 +334,22 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: -1.4947964
+      Pitch: 0.210202843
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.47358274
+      Yaw: 4.04856777
     Saved: ~
 Window Geometry:
+  Camera:
+    collapsed: false
   Displays:
     collapsed: false
-  Height: 578
+  Height: 1056
   Hide Left Dock: false
   Hide Right Dock: true
-  QMainWindow State: 000000ff00000000fd00000004000000000000016a000001b8fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000001b8000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f0000040efc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000280000040e000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000045c0000003efc0100000002fb0000000800540069006d006501000000000000045c0000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000002ec000001b800000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Image:
+    collapsed: false
+  QMainWindow State: 000000ff00000000fd00000004000000000000024800000396fc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006100fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c00610079007301000000280000013f000000d700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d006100670065010000018d000000830000000000000000fb0000000c00430061006d006500720061010000016d000000c40000001600fffffffb0000000a0049006d0061006700650100000237000000b70000001600fffffffb0000000a0049006d00610067006501000002f4000000ca0000001600ffffff000000010000010f0000040efc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000280000040e000000ad00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f0000003efc0100000002fb0000000800540069006d006501000000000000073f0000030000fffffffb0000000800540069006d00650100000000000004500000000000000000000004f10000039600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -217,6 +358,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: true
-  Width: 1116
-  X: 621
-  Y: 380
+  Width: 1855
+  X: 65
+  Y: 24
