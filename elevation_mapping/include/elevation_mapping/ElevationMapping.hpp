@@ -36,6 +36,11 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <std_srvs/Empty.h>
 
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_datatypes.h>
+#include <tf_conversions/tf_eigen.h>
+#include <eigen_conversions/eigen_msg.h>
+
 // Boost
 #include <boost/thread.hpp>
 
@@ -232,6 +237,9 @@ class ElevationMapping
 
   //! Frame ID of the elevation map
   std::string mapFrameId_;
+
+  //! TF frame id of the robot base.
+  std::string robotBaseFrameId_;
 
   //! TF listener and broadcaster.
   tf::TransformListener transformListener_;

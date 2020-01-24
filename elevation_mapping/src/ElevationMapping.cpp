@@ -174,6 +174,8 @@ bool ElevationMapping::readParameters()
   nodeHandle_.param("map_frame_id", mapFrameId_, string("/map"));
   map_.setFrameId(mapFrameId_);
 
+  nodeHandle_.param("robot_base_frame_id", robotBaseFrameId_, std::string("/robot"));
+
   grid_map::Length length;
   grid_map::Position position;
   double resolution;
@@ -313,6 +315,15 @@ void ElevationMapping::pointCloudCallback(
       return;
     }
     robotPoseCovariance = Eigen::Map<const Eigen::MatrixXd>(poseMessage->pose.covariance.data(), 6, 6);
+
+    //  publish tfs
+    static tf::TransformBroadcaster br;
+    tf::Transform transform;
+
+    Eigen::Affine3d eigen_affine_pose;
+    tf::poseMsgToEigen (poseMessage->pose.pose, eigen_affine_pose);
+    tf::transformEigenToTF(eigen_affine_pose,transform);
+    br.sendTransform(tf::StampedTransform(transform, lastPointCloudUpdateTime_, mapFrameId_, robotBaseFrameId_));
   }
 
   // Process point cloud.
