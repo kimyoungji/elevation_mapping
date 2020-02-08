@@ -5,7 +5,7 @@
       </rosparam>
     </node>
 
-    <node pkg="rosbag" type="play" name="player" args="--pause --hz=0.01 /home/youngji/Desktop/2019-10-01-19-03-19.bag">
+    <node pkg="rosbag" type="play" name="player" args="--pause /home/youngji/Desktop/2019-10-01-19-03-19.bag"> #-r 0.2
       <remap from="tf" to="tf_old" />
     </node>
 </launch>

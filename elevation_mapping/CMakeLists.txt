@@ -12,12 +12,16 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   message_filters
   sensor_msgs
+  image_transport
+  image_geometry
+  depth_image_proc
   std_msgs
   tf
   tf_conversions
   eigen_conversions
 #  kindr
   kindr_ros
+  depth_image_proc
 )
 
 find_package(kindr)
@@ -49,12 +53,16 @@ catkin_package(
     roscpp
     message_filters
     sensor_msgs
+    image_transport
+    image_geometry
+    depth_image_proc
     std_msgs
     tf
     tf_conversions
     eigen_conversions
 #    kindr
     kindr_ros
+    depth_image_proc
   DEPENDS
     Boost
 )

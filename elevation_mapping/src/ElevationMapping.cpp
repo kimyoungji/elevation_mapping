@@ -60,6 +60,8 @@ ElevationMapping::ElevationMapping(ros::NodeHandle& nodeHandle)
   ROS_INFO("Elevation mapping node started.");
 
   readParameters();
+  it_ = new image_transport::ImageTransport(nodeHandle_);
+  depthImageSubscriber_ = it_->subscribeCamera(depthImageTopic_, 1, &ElevationMapping::depthImageCallback, this);
   pointCloudSubscriber_ = nodeHandle_.subscribe(pointCloudTopic_, 1, &ElevationMapping::pointCloudCallback, this);
   if (!robotPoseTopic_.empty()) {
     robotPoseSubscriber_.subscribe(nodeHandle_, robotPoseTopic_, 1);
@@ -123,6 +125,7 @@ bool ElevationMapping::readParameters()
 {
   // ElevationMapping parameters.
   nodeHandle_.param("point_cloud_topic", pointCloudTopic_, string("/points"));
+  nodeHandle_.param("depth_image_topic", depthImageTopic_, string("/depths"));
   nodeHandle_.param("robot_pose_with_covariance_topic", robotPoseTopic_, string("/pose"));
   nodeHandle_.param("track_point_frame_id", trackPointFrameId_, string("/robot"));
   nodeHandle_.param("track_point_x", trackPoint_.x(), 0.0);
@@ -286,8 +289,9 @@ void ElevationMapping::pointCloudCallback(
 
   PointCloud<PointXYZRGB>::Ptr pointCloud(new PointCloud<PointXYZRGB>);
   pcl::fromPCLPointCloud2(pcl_pc, *pointCloud);
-  lastPointCloudUpdateTime_.fromNSec(1000 * pointCloud->header.stamp);
-
+//  lastPointCloudUpdateTime_.fromNSec(1000 * pointCloud->header.stamp);
+  lastPointCloudUpdateTime_.fromSec(rawPointCloud.header.stamp.toSec()); //YJ
+//  cout<<"last point: "<<lastPointCloudUpdateTime_<<endl;
   ROS_DEBUG("ElevationMap received a point cloud (%i points) for elevation mapping.", static_cast<int>(pointCloud->size()));
 
   // Update map location.
@@ -315,15 +319,108 @@ void ElevationMapping::pointCloudCallback(
       return;
     }
     robotPoseCovariance = Eigen::Map<const Eigen::MatrixXd>(poseMessage->pose.covariance.data(), 6, 6);
+  }
 
-//    //  publish tfs
-//    static tf::TransformBroadcaster br;
-//    tf::Transform transform;
+  // Process point cloud.
+  PointCloud<PointXYZRGB>::Ptr pointCloudProcessed(new PointCloud<PointXYZRGB>);
+  Eigen::VectorXf measurementVariances;
+  if (!sensorProcessor_->process(pointCloud, robotPoseCovariance, pointCloudProcessed,
+                                 measurementVariances)) {
+    ROS_ERROR("Point cloud could not be processed.");
+    resetMapUpdateTimer();
+    return;
+  }
 
-//    Eigen::Affine3d eigen_affine_pose;
-//    tf::poseMsgToEigen (poseMessage->pose.pose, eigen_affine_pose);
-//    tf::transformEigenToTF(eigen_affine_pose,transform);
-//    br.sendTransform(tf::StampedTransform(transform, lastPointCloudUpdateTime_, mapFrameId_, robotBaseFrameId_));
+  // Add point cloud to elevation map.
+  if (!map_.add(pointCloudProcessed, measurementVariances, lastPointCloudUpdateTime_, Eigen::Affine3d(sensorProcessor_->transformationSensorToMap_))) {
+    ROS_ERROR("Adding point cloud to elevation map failed.");
+    resetMapUpdateTimer();
+    return;
+  }
+
+  // Publish elevation map.
+  map_.publishRawElevationMap();
+  if (isContinouslyFusing_ && map_.hasFusedMapSubscribers()) {
+    map_.fuseAll();
+    map_.publishFusedElevationMap();
+  }
+
+  resetMapUpdateTimer();
+}
+
+void ElevationMapping::depthImageCallback(const sensor_msgs::ImageConstPtr& msg, const sensor_msgs::CameraInfoConstPtr & infomsg)
+{
+  // Check if point cloud has corresponding robot pose at the beginning
+  if(!receivedFirstMatchingPointcloudAndPose_) {
+    const double oldestPoseTime = robotPoseCache_.getOldestTime().toSec();
+    const double currentPointCloudTime = msg->header.stamp.toSec();
+
+    if(currentPointCloudTime < oldestPoseTime) {
+      ROS_WARN_THROTTLE(5, "No corresponding point cloud and pose are found. Waiting for first match.");
+      return;
+    } else {
+      ROS_INFO("First corresponding point cloud and pose found, elevation mapping started. ");
+      receivedFirstMatchingPointcloudAndPose_ = true;
+    }
+  }
+
+  stopMapUpdateTimer();
+
+  boost::recursive_mutex::scoped_lock scopedLock(map_.getRawDataMutex());
+
+  sensor_msgs::PointCloud2::Ptr rawPointCloud(new sensor_msgs::PointCloud2);
+  rawPointCloud->header = msg->header;
+  rawPointCloud->height = msg->height;
+  rawPointCloud->width  = msg->width;
+  rawPointCloud->is_dense = false;
+  rawPointCloud->is_bigendian = false;
+
+  sensor_msgs::PointCloud2Modifier pcd_modifier(*rawPointCloud);
+  pcd_modifier.setPointCloud2Fields(4, "x", 1, sensor_msgs::PointField::FLOAT32, "y", 1, sensor_msgs::PointField::FLOAT32, "z", 1, sensor_msgs::PointField::FLOAT32, "intensity", 1, sensor_msgs::PointField::FLOAT32);
+
+  // Update camera model
+  image_geometry::PinholeCameraModel camModel;
+  camModel.fromCameraInfo(infomsg);
+
+  depth_image_proc::convert<uint16_t>(msg, rawPointCloud, camModel);
+
+  // Convert the sensor_msgs/PointCloud2 data to pcl/PointCloud.
+  // TODO Double check with http://wiki.ros.org/hydro/Migration
+  pcl::PCLPointCloud2 pcl_pc;
+  pcl_conversions::toPCL(*rawPointCloud, pcl_pc);
+
+  PointCloud<PointXYZRGB>::Ptr pointCloud(new PointCloud<PointXYZRGB>);
+  pcl::fromPCLPointCloud2(pcl_pc, *pointCloud);
+//  lastPointCloudUpdateTime_.fromNSec(1000 * pointCloud->header.stamp);
+  lastPointCloudUpdateTime_.fromSec(msg->header.stamp.toSec()); //YJ
+//  cout<<"last point: "<<lastPointCloudUpdateTime_<<endl;
+  ROS_DEBUG("ElevationMap received a point cloud (%i points) for elevation mapping.", static_cast<int>(pointCloud->size()));
+
+  // Update map location.
+  updateMapLocation();
+
+  // Update map from motion prediction.
+  if (!updatePrediction(lastPointCloudUpdateTime_)) {
+    ROS_ERROR("Updating process noise failed.");
+    resetMapUpdateTimer();
+    return;
+  }
+
+  // Get robot pose covariance matrix at timestamp of point cloud.
+  Eigen::Matrix<double, 6, 6> robotPoseCovariance;
+  robotPoseCovariance.setZero();
+  if (!ignoreRobotMotionUpdates_) {
+    boost::shared_ptr<geometry_msgs::PoseWithCovarianceStamped const> poseMessage = robotPoseCache_.getElemBeforeTime(lastPointCloudUpdateTime_);
+    if (!poseMessage) {
+      // Tell the user that either for the timestamp no pose is available or that the buffer is possibly empty
+      if(robotPoseCache_.getOldestTime().toSec() > lastPointCloudUpdateTime_.toSec()) {
+        ROS_ERROR("The oldest pose available is at %f, requested pose at %f", robotPoseCache_.getOldestTime().toSec(), lastPointCloudUpdateTime_.toSec());
+      } else {
+        ROS_ERROR("Could not get pose information from robot for time %f. Buffer empty?", lastPointCloudUpdateTime_.toSec());
+      }
+      return;
+    }
+    robotPoseCovariance = Eigen::Map<const Eigen::MatrixXd>(poseMessage->pose.covariance.data(), 6, 6);
   }
 
   // Process point cloud.
@@ -606,6 +703,7 @@ bool ElevationMapping::saveMap(grid_map_msgs::ProcessFile::Request& request, gri
   if (!request.topic_name.empty()) {
     topic = nodeHandle_.getNamespace() + "/" + request.topic_name;
   }
+  cout<<map_.getFusedGridMap().getTimestamp()<<endl;//YJ
   response.success = GridMapRosConverter::saveToBag(map_.getFusedGridMap(), request.file_path, topic);
   response.success = GridMapRosConverter::saveToBag(map_.getRawGridMap(), request.file_path + "_raw", topic + "_raw");
   return response.success;

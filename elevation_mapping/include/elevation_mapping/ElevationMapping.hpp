@@ -29,6 +29,9 @@
 
 // ROS
 #include <ros/ros.h>
+#include <image_transport/image_transport.h>
+#include <image_geometry/pinhole_camera_model.h>
+#include <depth_image_proc/depth_conversions.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <message_filters/cache.h>
 #include <message_filters/subscriber.h>
@@ -73,6 +76,7 @@ class ElevationMapping
    * @param pointCloud the point cloud to be fused with the existing data.
    */
   void pointCloudCallback(const sensor_msgs::PointCloud2& pointCloud);
+  void depthImageCallback(const sensor_msgs::ImageConstPtr& msg, const sensor_msgs::CameraInfoConstPtr & infomsg);
 
   /*!
    * Callback function for the update timer. Forces an update of the map from
@@ -212,6 +216,8 @@ class ElevationMapping
   ros::NodeHandle& nodeHandle_;
 
   //! ROS subscribers.
+  image_transport::ImageTransport *it_;
+  image_transport::CameraSubscriber depthImageSubscriber_;
   ros::Subscriber pointCloudSubscriber_;
   message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped> robotPoseSubscriber_;
 
@@ -250,6 +256,7 @@ class ElevationMapping
 
   //! ROS topics for subscriptions.
   std::string pointCloudTopic_;
+  std::string depthImageTopic_;
   std::string robotPoseTopic_;
 
   //! Elevation map.

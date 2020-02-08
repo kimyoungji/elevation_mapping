@@ -1,0 +1,18 @@
+point_cloud_topic: "/velodyne_points"
+sensor_frame_id: "velodyne_actual"
+map_frame_id: "map"
+robot_base_frame_id: "odom"
+robot_pose_with_covariance_topic: "/cassie/pose"
+robot_pose_cache_size: 200
+track_point_frame_id: "odom"
+track_point_x: 0.0
+track_point_y: 0.0
+track_point_z: 0.0
+
+# create fixed frame (map)??
+# publish map to odom tf using /cassie/pose 
+ 
+# in the bag file, remap frame_id or tfs?
+# /cassie/pose: /odom -> cassie/torso
+# odom -> map  
+

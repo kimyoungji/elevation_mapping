@@ -1,22 +1,22 @@
-#length_in_x: 2.5
-#length_in_y: 2.5
-#position_x: 0.0
-#position_y: 0.0
-#resolution: 0.01
-#min_variance: 0.000009
-#max_variance: 0.01
-#mahalanobis_distance_threshold: 2.5
-#multi_height_noise: 0.0000009
-
 length_in_x: 30.0
 length_in_y: 30.0
 position_x: 0.0
 position_y: 0.0
-resolution: 0.1
-min_variance: 0.0001
-max_variance: 100.0
+resolution: 0.05
+min_variance: 0.000009
+max_variance: 0.01
 mahalanobis_distance_threshold: 2.5
-multi_height_noise: 0.000002
+multi_height_noise: 0.1
+
+#length_in_x: 100.0
+#length_in_y: 100.0
+#position_x: 0.0
+#position_y: 0.0
+#resolution: 0.1
+#min_variance: 0.0001
+#max_variance: 1000.0
+#mahalanobis_distance_threshold: 2.5
+#multi_height_noise: 0.000002
 
 #length_in_x: 5.0
 #length_in_y: 5.0
