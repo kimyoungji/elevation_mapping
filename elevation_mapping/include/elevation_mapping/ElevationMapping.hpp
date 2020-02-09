@@ -153,6 +153,7 @@ class ElevationMapping
    */
   bool saveMap(grid_map_msgs::ProcessFile::Request& request, grid_map_msgs::ProcessFile::Response& response);
 
+  bool saveAndClearMapInOrder(grid_map_msgs::ProcessFile::Request& request, grid_map_msgs::ProcessFile::Response& response);
  private:
 
   /*!
@@ -228,6 +229,7 @@ class ElevationMapping
   ros::ServiceServer clearMapService_;
   ros::ServiceServer maskedReplaceService_;
   ros::ServiceServer saveMapService_;
+  ros::ServiceServer saveAndClearMapInOrderService_;
 
   //! Callback thread for the fusion services.
   boost::thread fusionServiceThread_;

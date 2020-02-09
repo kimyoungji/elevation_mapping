@@ -109,6 +109,7 @@ ElevationMapping::ElevationMapping(ros::NodeHandle& nodeHandle)
   clearMapService_ = nodeHandle_.advertiseService("clear_map", &ElevationMapping::clearMap, this);
   maskedReplaceService_ = nodeHandle_.advertiseService("masked_replace", &ElevationMapping::maskedReplace, this);
   saveMapService_ = nodeHandle_.advertiseService("save_map", &ElevationMapping::saveMap, this);
+  saveAndClearMapInOrderService_ = nodeHandle_.advertiseService("save_and_clear_map", &ElevationMapping::saveAndClearMapInOrder, this);
 
   initialize();
 }
@@ -706,6 +707,24 @@ bool ElevationMapping::saveMap(grid_map_msgs::ProcessFile::Request& request, gri
   cout<<map_.getFusedGridMap().getTimestamp()<<endl;//YJ
   response.success = GridMapRosConverter::saveToBag(map_.getFusedGridMap(), request.file_path, topic);
   response.success = GridMapRosConverter::saveToBag(map_.getRawGridMap(), request.file_path + "_raw", topic + "_raw");
+  return response.success;
+}
+
+bool ElevationMapping::saveAndClearMapInOrder(grid_map_msgs::ProcessFile::Request& request, grid_map_msgs::ProcessFile::Response& response)
+{
+  ROS_INFO("Saving map to file.");
+  boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
+  map_.fuseAll();
+  std::string topic = nodeHandle_.getNamespace() + "/elevation_map";
+  std::string files = request.file_path + std::to_string(map_.getFusedGridMap().getTimestamp()) +".bag";
+//  cout<<map_.getFusedGridMap().getTimestamp()<<endl;//YJ
+  response.success = GridMapRosConverter::saveToBag(map_.getFusedGridMap(), files, topic);
+
+  ROS_INFO("Clearing map...");
+  bool success = map_.clear();
+  success &= initializeElevationMap();
+  ROS_INFO("Map cleared.");
+
   return response.success;
 }
 
