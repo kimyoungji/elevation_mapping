@@ -152,8 +152,11 @@ class ElevationMapping
    * @return true if successful.
    */
   bool saveMap(grid_map_msgs::ProcessFile::Request& request, grid_map_msgs::ProcessFile::Response& response);
+  void saveMap(std::string file_path);
 
   bool saveAndClearMapInOrder(grid_map_msgs::ProcessFile::Request& request, grid_map_msgs::ProcessFile::Response& response);
+
+  void saveAndClearMapInOrder(std::string file_path);
  private:
 
   /*!
@@ -275,6 +278,7 @@ class ElevationMapping
 
   //! Time of the last point cloud update.
   ros::Time lastPointCloudUpdateTime_;
+  uint64_t lastPointCloudUpdateIdx_;
 
   //! Timer for the robot motion update.
   ros::Timer mapUpdateTimer_;

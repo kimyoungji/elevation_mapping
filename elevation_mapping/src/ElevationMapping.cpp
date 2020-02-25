@@ -265,11 +265,16 @@ void ElevationMapping::visibilityCleanupThread()
 void ElevationMapping::pointCloudCallback(
     const sensor_msgs::PointCloud2& rawPointCloud)
 {
+
+  if(lastPointCloudUpdateIdx_%10==0)saveMap("/home/youngji/workspace/maps/kitti05/elevation/");//YJ for kitti
+  
+  map_.publishRawElevationMap(); 
   // Check if point cloud has corresponding robot pose at the beginning
   if(!receivedFirstMatchingPointcloudAndPose_) {
     const double oldestPoseTime = robotPoseCache_.getOldestTime().toSec();
     const double currentPointCloudTime = rawPointCloud.header.stamp.toSec();
-
+    cout<<currentPointCloudTime<<endl;
+    cout<<oldestPoseTime<<endl;
     if(currentPointCloudTime < oldestPoseTime) {
       ROS_WARN_THROTTLE(5, "No corresponding point cloud and pose are found. Waiting for first match.");
       return;
@@ -291,7 +296,9 @@ void ElevationMapping::pointCloudCallback(
   PointCloud<PointXYZRGB>::Ptr pointCloud(new PointCloud<PointXYZRGB>);
   pcl::fromPCLPointCloud2(pcl_pc, *pointCloud);
 //  lastPointCloudUpdateTime_.fromNSec(1000 * pointCloud->header.stamp);
-  lastPointCloudUpdateTime_.fromSec(rawPointCloud.header.stamp.toSec()); //YJ
+//  lastPointCloudUpdateTime_.fromSec(rawPointCloud.header.stamp.toSec()); //YJ
+  lastPointCloudUpdateTime_.fromSec(rawPointCloud.header.stamp.toSec());
+  lastPointCloudUpdateIdx_ = rawPointCloud.header.seq;
 //  cout<<"last point: "<<lastPointCloudUpdateTime_<<endl;
   ROS_DEBUG("ElevationMap received a point cloud (%i points) for elevation mapping.", static_cast<int>(pointCloud->size()));
 
@@ -340,13 +347,13 @@ void ElevationMapping::pointCloudCallback(
   }
 
   // Publish elevation map.
-  map_.publishRawElevationMap();
+//  map_.publishRawElevationMap();  
   if (isContinouslyFusing_ && map_.hasFusedMapSubscribers()) {
     map_.fuseAll();
     map_.publishFusedElevationMap();
   }
-
   resetMapUpdateTimer();
+  
 }
 
 void ElevationMapping::depthImageCallback(const sensor_msgs::ImageConstPtr& msg, const sensor_msgs::CameraInfoConstPtr & infomsg)
@@ -394,6 +401,7 @@ void ElevationMapping::depthImageCallback(const sensor_msgs::ImageConstPtr& msg,
   pcl::fromPCLPointCloud2(pcl_pc, *pointCloud);
 //  lastPointCloudUpdateTime_.fromNSec(1000 * pointCloud->header.stamp);
   lastPointCloudUpdateTime_.fromSec(msg->header.stamp.toSec()); //YJ
+  lastPointCloudUpdateIdx_ = msg->header.seq;
 //  cout<<"last point: "<<lastPointCloudUpdateTime_<<endl;
   ROS_DEBUG("ElevationMap received a point cloud (%i points) for elevation mapping.", static_cast<int>(pointCloud->size()));
 
@@ -710,13 +718,32 @@ bool ElevationMapping::saveMap(grid_map_msgs::ProcessFile::Request& request, gri
   return response.success;
 }
 
+void ElevationMapping::saveMap(std::string file_path)
+{
+  ROS_INFO("Saving map to file.");
+//  boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
+//  map_.fuseAll();
+  std::string topic = nodeHandle_.getNamespace() + "/elevation_map_raw";
+  std::string files = file_path + std::to_string(lastPointCloudUpdateIdx_) + ".bag";
+  GridMap submap = map_.getFusedGridMap();
+  if(!GridMapRosConverter::saveToBag(submap, files, topic))return;
+//  bool isSuccess;
+//  Index index;
+//  grid_map::Position requestedSubmapPosition(0, 0);
+//  Length requestedSubmapLength(50,50);
+//  GridMap subMap = map_.getFusedGridMap().getSubmap(requestedSubmapPosition, requestedSubmapLength, index, isSuccess);
+//  GridMapRosConverter::saveToBag(subMap, files, topic);
+}
+
+
 bool ElevationMapping::saveAndClearMapInOrder(grid_map_msgs::ProcessFile::Request& request, grid_map_msgs::ProcessFile::Response& response)
 {
   ROS_INFO("Saving map to file.");
   boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
   map_.fuseAll();
   std::string topic = nodeHandle_.getNamespace() + "/elevation_map";
-  std::string files = request.file_path + std::to_string(map_.getFusedGridMap().getTimestamp()) +".bag";
+//  std::string files = request.file_path + std::to_string(map_.getFusedGridMap().getTimestamp()) +".bag";
+  std::string files = request.file_path + std::to_string(lastPointCloudUpdateIdx_) + ".bag";
 //  cout<<map_.getFusedGridMap().getTimestamp()<<endl;//YJ
   response.success = GridMapRosConverter::saveToBag(map_.getFusedGridMap(), files, topic);
 
@@ -726,6 +753,20 @@ bool ElevationMapping::saveAndClearMapInOrder(grid_map_msgs::ProcessFile::Reques
   ROS_INFO("Map cleared.");
 
   return response.success;
+}
+
+void ElevationMapping::saveAndClearMapInOrder(std::string file_path)
+{
+  ROS_INFO("Saving map to file.");
+  boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
+  map_.fuseAll();
+  std::string topic = nodeHandle_.getNamespace() + "/elevation_map";
+  std::string files = file_path + std::to_string(lastPointCloudUpdateIdx_) + ".bag";
+  if(!GridMapRosConverter::saveToBag(map_.getFusedGridMap(), files, topic))return;
+  ROS_INFO("Clearing map...");
+  bool success = map_.clear();
+  success &= initializeElevationMap();
+  ROS_INFO("Map cleared.");
 }
 
 void ElevationMapping::resetMapUpdateTimer()
