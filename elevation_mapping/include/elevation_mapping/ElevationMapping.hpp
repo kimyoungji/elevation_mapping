@@ -260,6 +260,7 @@ class ElevationMapping
   std::string trackPointFrameId_;
 
   //! ROS topics for subscriptions.
+  std::string mapSaveDir_;
   std::string pointCloudTopic_;
   std::string depthImageTopic_;
   std::string robotPoseTopic_;

@@ -21,3 +21,6 @@ roslaunch elevation_mapping_demos remap_tfs.launch
 
 rosservice call /elevation_mapping/save_and_clear_map "file_path: '/home/youngji/workspace/maps/cassie3/elevation/'"
 rosservice call /elevation_mapping/save_and_clear_map "file_path: '/home/youngji/workspace/maps/kitti05/elevation/'"
+
+rosservice call /elevation_mapping/save_map "file_path: '/home/youngji/workspace/maps/kitti05/elevation/2760.bag' 
+topic_name: 'elevation_map'"

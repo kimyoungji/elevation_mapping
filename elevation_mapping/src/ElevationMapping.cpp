@@ -125,6 +125,7 @@ ElevationMapping::~ElevationMapping()
 bool ElevationMapping::readParameters()
 {
   // ElevationMapping parameters.
+  nodeHandle_.param("map_save_dir", mapSaveDir_, string("/home/youngji/workspace/maps/kitti05/elevation/"));
   nodeHandle_.param("point_cloud_topic", pointCloudTopic_, string("/points"));
   nodeHandle_.param("depth_image_topic", depthImageTopic_, string("/depths"));
   nodeHandle_.param("robot_pose_with_covariance_topic", robotPoseTopic_, string("/pose"));
@@ -266,7 +267,7 @@ void ElevationMapping::pointCloudCallback(
     const sensor_msgs::PointCloud2& rawPointCloud)
 {
 
-  if(lastPointCloudUpdateIdx_%10==0)saveMap("/home/youngji/workspace/maps/kitti05/elevation/");//YJ for kitti
+  if(lastPointCloudUpdateIdx_%10==0)saveMap(mapSaveDir_);//YJ for kitti
   
   map_.publishRawElevationMap(); 
   // Check if point cloud has corresponding robot pose at the beginning
@@ -412,7 +413,7 @@ void ElevationMapping::depthImageCallback(const sensor_msgs::ImageConstPtr& msg,
   if (!updatePrediction(lastPointCloudUpdateTime_)) {
     ROS_ERROR("Updating process noise failed.");
     resetMapUpdateTimer();
-    return;
+//    return;
   }
 
   // Get robot pose covariance matrix at timestamp of point cloud.
@@ -427,7 +428,7 @@ void ElevationMapping::depthImageCallback(const sensor_msgs::ImageConstPtr& msg,
       } else {
         ROS_ERROR("Could not get pose information from robot for time %f. Buffer empty?", lastPointCloudUpdateTime_.toSec());
       }
-      return;
+//      return;
     }
     robotPoseCovariance = Eigen::Map<const Eigen::MatrixXd>(poseMessage->pose.covariance.data(), 6, 6);
   }
@@ -439,14 +440,14 @@ void ElevationMapping::depthImageCallback(const sensor_msgs::ImageConstPtr& msg,
                                  measurementVariances)) {
     ROS_ERROR("Point cloud could not be processed.");
     resetMapUpdateTimer();
-    return;
+//    return;
   }
 
   // Add point cloud to elevation map.
   if (!map_.add(pointCloudProcessed, measurementVariances, lastPointCloudUpdateTime_, Eigen::Affine3d(sensorProcessor_->transformationSensorToMap_))) {
     ROS_ERROR("Adding point cloud to elevation map failed.");
     resetMapUpdateTimer();
-    return;
+//    return;
   }
 
   // Publish elevation map.
@@ -472,7 +473,7 @@ void ElevationMapping::mapUpdateTimerCallback(const ros::TimerEvent&)
   if (!updatePrediction(time)) {
     ROS_ERROR("Updating process noise failed.");
     resetMapUpdateTimer();
-    return;
+//    return;
   }
 
   // Publish elevation map.
@@ -721,9 +722,10 @@ bool ElevationMapping::saveMap(grid_map_msgs::ProcessFile::Request& request, gri
 void ElevationMapping::saveMap(std::string file_path)
 {
   ROS_INFO("Saving map to file.");
-//  boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
-//  map_.fuseAll();
-  std::string topic = nodeHandle_.getNamespace() + "/elevation_map_raw";
+  boost::recursive_mutex::scoped_lock scopedLock(map_.getFusedDataMutex());
+  map_.fuseAll();
+  map_.publishFusedElevationMap();
+  std::string topic = nodeHandle_.getNamespace() + "/elevation_map";
   std::string files = file_path + std::to_string(lastPointCloudUpdateIdx_) + ".bag";
   GridMap submap = map_.getFusedGridMap();
   if(!GridMapRosConverter::saveToBag(submap, files, topic))return;

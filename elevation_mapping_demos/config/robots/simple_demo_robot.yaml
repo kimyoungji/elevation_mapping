@@ -1,3 +1,4 @@
+map_save_dir: "/home/youngji/workspace/maps/kitti06/elevation/"
 point_cloud_topic: "/points"
 sensor_frame_id: "sensor"
 map_frame_id: "map"
